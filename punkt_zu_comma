@@ -20,4 +20,3 @@ fi
 touch "$2" || echo "Can't create output file '$2'"; exit 1
 
 echo "Converting '$1' ot '$2'..."
-cat "$1" | sed -e 's/\./,/g' > "$2"
