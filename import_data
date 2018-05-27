@@ -5,8 +5,8 @@ import csv
 import glob
 import os.path
 
-input_dir = '/Users/valeria/Documents/Data/Import'
-output_dir = '/Users/valeria/Documents/Data/Output'
+input_dir = '/Users/valeria/Documents/Data/Import/'
+output_dir = '/Users/valeria/Documents/Data/Output/'
 
 input_files = glob.glob(input_dir+'/*.csv')
 
@@ -57,7 +57,7 @@ def deu_convert(input_file, in_delimiter):
 
 # Function returns output file name for point to comma convertion
 def deu_output_file_name(input_file):
-  return input_file.replace(input_dir, output_dir).replace('.csv','.deu.csv')
+  return input_file.replace(input_dir, output_dir+'DEU.')
 
 # Main function
 def main():
