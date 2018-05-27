@@ -2,18 +2,18 @@
 
 import datetime
 import csv
+import glob
+import os.path
 
-import_dir = '/Users/valeria/Documents/Data/Import'
+input_dir = '/Users/valeria/Documents/Data/Import'
 output_dir = '/Users/valeria/Documents/Data/Output'
-now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-output_file = output_dir+'/'+now+'.csv'
 
-import_file = import_dir+'/'+'export.orders.2018.05.18.csv'
+input_files = glob.glob(input_dir+'/*.csv')
 
 # Function for loading csv data from file
-def load_data(import_file, in_delimiter):
-  print "Loading data from file '"+import_file+"' ..."
-  csv_data = csv.reader(open(import_file), delimiter=in_delimiter)
+def load_data(input_file, in_delimiter):
+  print "[LOAD] Loading data from file '"+input_file+"'"
+  csv_data = csv.reader(open(input_file), delimiter=in_delimiter)
   return csv_data
 
 # Function for outputing csv data
@@ -42,11 +42,11 @@ def is_num(str):
 def point2comma(num):
   return str(num).replace('.',',')
 
-def deu_convert(import_file, in_delimiter):
-  data = load_data(import_file, in_delimiter)
-  output_file = import_file.replace('.csv','.deu.csv')
-  print "Converting to comma in output file '"+output_file+"' ..."
-  writer = csv.writer(open(import_file.replace('.csv','.deu.csv'),'wb'), delimiter = in_delimiter)
+# Function creates converted (deu) file
+def deu_convert(input_file, in_delimiter):
+  data = load_data(input_file, in_delimiter)
+  print "[WRITE] Writing data to '"+deu_output_file_name(input_file)+"'"
+  writer = csv.writer(open(deu_output_file_name(input_file),'wb'), delimiter = in_delimiter)
   for row in data:
     i = 0
     for cell in row:
@@ -55,12 +55,19 @@ def deu_convert(import_file, in_delimiter):
       i += 1
     writer.writerow(row)
 
-  return output_file
+# Function returns output file name for point to comma convertion
+def deu_output_file_name(input_file):
+  return input_file.replace(input_dir, output_dir).replace('.csv','.deu.csv')
 
 # Main function
 def main():
-  # Importing ShopWare data and converting to comma (deu)
-  shopware_deu_file = deu_convert(import_file, ';')
+  # Importing ShopWare data and converting to comma (deu)a
+  for input_file in input_files:
+    if os.path.exists(deu_output_file_name(input_file)):
+      print "[SKIP] Skipping convertion for output file '"+deu_output_file_name(input_file)+"' (already exists)"
+    else:
+      print "[CONV] Converting data to output file '"+deu_output_file_name(input_file)+"' (point to comma)"
+      shopware_deu_file = deu_convert(input_file, ';')
 
   # Print ShopWare data
   #print_csv_data(load_data(shopware_deu_file, ';'))
