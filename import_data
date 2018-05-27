@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+import datetime
+import csv
+
+import_dir = '/Users/valeria/Documents/Data/Import'
+output_dir = '/Users/valeria/Documents/Data/Output'
+now = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+output_file = output_dir+'/'+now+'.csv'
+
+import_file = import_dir+'/'+'export.orders.2018.05.18.csv'
+
+# Function for loading csv data from file
+def load_data(import_file, in_delimiter):
+  print "Loading data from file '"+import_file+"' ..."
+  csv_data = csv.reader(open(import_file), delimiter=in_delimiter)
+  return csv_data
+
+# Function for outputing csv data
+def print_csv_data(data):
+  print "CSV data:"
+  for row in data:
+    print(row)
+
+# Function for writing data to csv output file
+def write_csv_file(output_file, out_delimiter):
+  print "Writing output file '"+output_file+"' ..."
+  with open(output_file, 'wb') as csv_out_file:
+    spamwriter = csv.writer(csv_out_file, delimiter=out_delimiter)
+    spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
+    spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
+
+# Functions checks if element is a number or float
+def is_num(str):
+  try:
+    float(str)
+  except:
+    return False
+  return True
+
+# Function converts point to comma (float conversion us -> deu)
+def point2comma(num):
+  return str(num).replace('.',',')
+
+def deu_convert(import_file, in_delimiter):
+  data = load_data(import_file, in_delimiter)
+  output_file = import_file.replace('.csv','.deu.csv')
+  print "Converting to comma in output file '"+output_file+"' ..."
+  writer = csv.writer(open(import_file.replace('.csv','.deu.csv'),'wb'), delimiter = in_delimiter)
+  for row in data:
+    i = 0
+    for cell in row:
+      if is_num(cell):
+        row[i] = point2comma(cell)
+      i += 1
+    writer.writerow(row)
+
+  return output_file
+
+# Main function
+def main():
+  # Importing ShopWare data and converting to comma (deu)
+  shopware_deu_file = deu_convert(import_file, ';')
+
+  # Print ShopWare data
+  #print_csv_data(load_data(shopware_deu_file, ';'))
+
+if __name__ == "__main__":
+    main()
+
