@@ -4,11 +4,13 @@ import datetime
 import csv
 import glob
 import os.path
+import hashlib
 
 input_dir = '/Users/valeria/Documents/Data/Import/'
 output_dir = '/Users/valeria/Documents/Data/Output/'
 
-input_files = glob.glob(input_dir+'/*.csv')
+shop_input_files = glob.glob(input_dir+'/*.csv')
+aws_input_files = glob.glob(input_dir+'/*.txt')
 
 # Function for loading csv data from file
 def load_data(input_file, in_delimiter):
@@ -38,7 +40,7 @@ def point2comma(num):
 def deu_convert(input_file, in_delimiter):
   data = load_data(input_file, in_delimiter)
   print "[WRITE] Writing data to '"+deu_output_file_name(input_file)+"'"
-  writer = csv.writer(open(deu_output_file_name(input_file),'wb'), delimiter = in_delimiter)
+  writer = csv.writer(open(deu_output_file_name(input_file),'wb'), delimiter = ';')
   for row in data:
     i = 0
     for cell in row:
@@ -46,23 +48,189 @@ def deu_convert(input_file, in_delimiter):
         row[i] = point2comma(cell)
       i += 1
     writer.writerow(row)
+  return deu_output_file_name(input_file)
 
 # Function returns output file name for point to comma convertion
 def deu_output_file_name(input_file):
   return input_file.replace(input_dir, output_dir+'DEU.')
 
+# Function returns output file name for date conversion
+def date_output_file_name(input_file):
+  return input_file.replace('DEU.', 'DATE.DEU.')
+
+# Function returns output file name for aws-order-id conversion
+def awsid_output_file_name(input_file):
+  return input_file.replace('DATE.', 'AWSID.DATE.')
+
+# Function returns output file name for aws email conversion
+def awsemail_output_file_name(input_file):
+  return input_file.replace('AWSID.', 'AWSEMAIL.AWSID.')
+
+# Function cell format checks for numeric columns
+def cell_format_num_error(input_file, in_delimiter, column_names):
+  data = load_data(input_file, in_delimiter)
+  print "[CHECK] Checking format of numeric columns in input file '"+input_file+"'"
+  i = 0
+  format_error = False
+  column_idxs = []
+  for row in data:
+    # find mapping of column_idxs to column_names
+    if i == 0:
+      idx = 0
+      for cell in row:
+        for name in column_names:
+          if name == cell:
+            column_idxs.append(idx)
+        idx += 1
+    else:
+      j = 0
+      for idx in column_idxs:
+        if not is_num(row[idx]) and row[idx] !=  '':
+          print "[ERROR$] Cell ("+str(i+1)+",'"+str(column_names[j])+"') is not numeric: '"+row[idx]+"'"
+          format_error = True
+        j += 1
+    i += 1
+  return format_error
+
+# Function converts date format
+# shop: (2018-05-20 23:32:34 -> 2018.05.20)
+# aws:  (2018-04-20T09:05:12+00:00 -> 2018.04.20)
+def date_convert(input_file, in_delimiter, type):
+  data = load_data(input_file, in_delimiter)
+  if type == 'shop':
+    column_names = ['ordertime','cleareddate','releasedate']
+  if type == 'aws':
+    column_names = ['purchase-date','payments-date','shipment-date','reporting-date','estimated-arrival-date']
+  try:
+    column_names
+  except:
+    print "[ABORT] File type '"+type+"' unknown for date conversion"
+    exit (1)
+ 
+  print "[WRITE] Writing data to '"+date_output_file_name(input_file)+"'"
+  writer = csv.writer(open(date_output_file_name(input_file),'wb'), delimiter = ';')
+
+  i = 0
+  column_idxs = []
+  for row in data:
+    # find mapping of column_idxs to column_names
+    if i == 0:
+      idx = 0
+      for cell in row:
+        for name in column_names:
+          if name == cell:
+            column_idxs.append(idx)
+        idx += 1
+    else:
+      for idx in column_idxs:
+        if type == 'shop':
+          if len(row[idx]) == 19:
+            date_str = row[idx][0:4]+'.'+row[idx][5:7]+'.'+row[idx][8:10]
+            row[idx] = date_str
+          else:
+            row[idx] = ''
+        if type == 'aws':
+          if len(row[idx]) == 25:
+            date_str = row[idx][0:4]+'.'+row[idx][5:7]+'.'+row[idx][8:10]
+            row[idx] = date_str
+          else:
+            row[idx] = ''
+    i += 1
+    writer.writerow(row)
+
+  return date_output_file_name(input_file)
+
+# Function removes dashes from amazon-order-id
+def awsid_convert(input_file, in_delimiter):
+  data = load_data(input_file, in_delimiter)
+  column_names = ['amazon-order-id']
+  print "[WRITE] Writing data to '"+awsid_output_file_name(input_file)+"'"
+  writer = csv.writer(open(awsid_output_file_name(input_file),'wb'), delimiter = ';')
+
+  i = 0
+  column_idxs = []
+  for row in data:
+    # find mapping of column_idxs to column_names
+    if i == 0:
+      idx = 0
+      for cell in row:
+        for name in column_names:
+          if name == cell:
+            column_idxs.append(idx)
+        idx += 1
+    else:
+      for idx in column_idxs:
+        row[idx] = row[idx].replace('-','')
+    i += 1
+    writer.writerow(row)
+
+  return awsid_output_file_name(input_file)
+
+# Function generates hash from aws buyer-email
+def awsemail_convert(input_file, in_delimiter):
+  data = load_data(input_file, in_delimiter)
+  column_names = ['buyer-email']
+  print "[WRITE] Writing data to '"+awsemail_output_file_name(input_file)+"'"
+  writer = csv.writer(open(awsemail_output_file_name(input_file),'wb'), delimiter = ';')
+
+  i = 0
+  column_idxs = []
+  for row in data:
+    # find mapping of column_idxs to column_names
+    if i == 0:
+      idx = 0
+      for cell in row:
+        for name in column_names:
+          if name == cell:
+            column_idxs.append(idx)
+        idx += 1
+    else:
+      for idx in column_idxs:
+        row[idx] = hashlib.sha224(row[idx]).hexdigest()
+    i += 1
+    writer.writerow(row)
+
+  return awsemail_output_file_name(input_file)
+
+#################
 # Main function
 def main():
-  # Importing ShopWare data and converting to comma (deu)a
-  for input_file in input_files:
+  # Importing ShopWare data, checking format, and converting to comma (deu)
+  for input_file in shop_input_files:
     if os.path.exists(deu_output_file_name(input_file)):
       print "[SKIP] Skipping convertion for output file '"+deu_output_file_name(input_file)+"' (already exists)"
     else:
-      print "[CONV] Converting data to output file '"+deu_output_file_name(input_file)+"' (point to comma)"
-      shopware_deu_file = deu_convert(input_file, ';')
+      shop_column_names = ['invoice_amount','invoice_amount_net','invoice_shipping','invoice_shipping_net','netto','price','quantity','tax']
+      if cell_format_num_error(input_file, ';', shop_column_names):
+        print "[ABORT] Not converting file '"+input_file+"' due to format errors"
+      else:
+        print "[CONV] Converting numbers to output file '"+deu_output_file_name(input_file)+"' (point to comma)"
+        shopware_deu_file = deu_convert(input_file, ';')
+        print "[CONV] Converting dates to output file '"+date_output_file_name(shopware_deu_file)+"' (date conversion)"
+        shopware_date_file = date_convert(shopware_deu_file, ';', 'shop')
+    
+
+  # Importing Amazon data, checking format, and converting to comma (deu)
+  for input_file in aws_input_files:
+    if os.path.exists(deu_output_file_name(input_file)):
+      print "[SKIP] Skipping convertion for output file '"+deu_output_file_name(input_file)+"' (already exists)"
+    else:
+      aws_column_names = ['quantity-shipped','item-price','item-tax']
+      if cell_format_num_error(input_file, '\t', aws_column_names):
+        print "[ABORT] Not converting file '"+input_file+"' due to format errors"
+      else:
+        print "[CONV] Converting numbers to output file '"+deu_output_file_name(input_file)+"' (point to comma)"
+        aws_deu_file = deu_convert(input_file, '\t')
+        print "[CONV] Converting dates to output file '"+date_output_file_name(aws_deu_file)+"' (date conversion)"
+        aws_date_file = date_convert(aws_deu_file, ';', 'aws')
+        print "[CONV] Converting aws-order-ids to output file '"+awsid_output_file_name(aws_date_file)+"' (id conversion)"
+        aws_id_file = awsid_convert(aws_date_file, ';')
+        print "[CONV] Converting aws-email to output file '"+awsemail_output_file_name(aws_id_file)+"' (email conversion)"
+        awsemail_file = awsemail_convert(aws_id_file, ';')
 
   # Print ShopWare data
   #print_csv_data(load_data(shopware_deu_file, ';'))
+  #print_csv_data(load_data(aws_deu_file, ';'))
 
 if __name__ == "__main__":
     main()
