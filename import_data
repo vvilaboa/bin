@@ -22,14 +22,6 @@ def print_csv_data(data):
   for row in data:
     print(row)
 
-# Function for writing data to csv output file
-def write_csv_file(output_file, out_delimiter):
-  print "Writing output file '"+output_file+"' ..."
-  with open(output_file, 'wb') as csv_out_file:
-    spamwriter = csv.writer(csv_out_file, delimiter=out_delimiter)
-    spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
-    spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
-
 # Functions checks if element is a number or float
 def is_num(str):
   try:
