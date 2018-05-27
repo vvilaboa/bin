@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+
+import datetime
+import csv
+import glob
+import os.path
+
+input_dir = '/Users/valeria/Documents/Data/Output/'
+output_dir = '/Users/valeria/Documents/Data/Merge/'
+now = datetime.datetime.now().strftime("%Y.%m.%d")
+
+shop_input_files = glob.glob(input_dir+'/DATE.DEU.*.csv')
+aws_input_files = glob.glob(input_dir+'/AWSEMAIL.AWSID.DATE.DEU.*.txt')
+
+# Function for loading csv data from file
+def load_data(input_file, in_delimiter):
+  print "[LOAD] Loading data from file '"+input_file+"'"
+  csv_data = csv.reader(open(input_file), delimiter=in_delimiter)
+  return csv_data
+
+# Function converts point to comma (float conversion us -> deu)
+def point2comma(num):
+  return str(num).replace('.',',')
+
+# Function converts comma to point (float conversion us -> deu)
+def comma2point(num):
+  return str(num).replace(',','.')
+
+################
+# TODO: DATE
+# FORMEL
+
+#################
+# Main function
+def main():
+  # Merging files
+  for shop_input_file in shop_input_files:
+    found = 0
+    for aws_input_file in aws_input_files:
+      if shop_input_file[-14:-4] == aws_input_file[-14:-4]:
+        found += 1
+
+    if found == 1:
+      # Preparing output file
+      print "[MERGE] Merging files '"+shop_input_file+"' and '"+aws_input_file+"'"
+      output_file = output_dir+'MERGE.'+str(shop_input_file[-14:-4])+'.csv'
+      if os.path.exists(output_file):
+        print "[SKIP] Skipping convertion for output file '"+output_file+"' (already exists)"
+      else:
+        writer = csv.writer(open(output_file,'wb'), delimiter = ';')
+        out_row = ['Quelle','Hinzugefuegt','orderId','Bestellungen','ordertime','Nutzer','invoice_amount','invoice_amount_net','invoice_shipping','invoice_shipping_net','netto','cleared_description','status_description','payment_description','cleareddate','articleID','articleordernumber','name','price','Quantity','Umsatz_Brutto ohne_Versandkosten','releasedate0','tax','Shipping_country']
+        writer.writerow(out_row)
+
+        # Extracting and writing shop data
+        shop_data = load_data(shop_input_file, ';')
+        print "[WRITE] Writing extracted Shopware data to '"+output_file+"'"
+        i = 0
+        c_dict = {}
+        for row in shop_data:
+          # find mapping of column_idxs to column_names
+          if i == 0:
+            idx = 0
+            for cell in row:
+              if cell == '\xef\xbb\xbforderId':
+                cell = 'orderId'
+              c_dict[cell]=idx
+              idx += 1
+          else:
+            out_row = ['Shop',now,row[c_dict['orderId']],row[c_dict['ordernumber']],row[c_dict['ordertime']],row[c_dict['customernumber']],row[c_dict['invoice_amount']],row[c_dict['invoice_amount_net']],row[c_dict['invoice_shipping']],row[c_dict['invoice_shipping_net']],row[c_dict['netto']],row[c_dict['cleared_description']],row[c_dict['status_description']],row[c_dict['payment_description']],row[c_dict['cleareddate']],row[c_dict['articleID']],row[c_dict['articleordernumber']],row[c_dict['name']],row[c_dict['price']],row[c_dict['quantity']],row[c_dict['invoice']],row[c_dict['releasedate']],row[c_dict['tax']],row[c_dict['shipping_countryiso']]]
+            writer.writerow(out_row)
+          i += 1
+
+        # Extracting and writing aws data
+        aws_data = load_data(aws_input_file, ';')
+        print "[WRITE] Writing extracted Amazon data to '"+output_file+"'"
+        i = 0
+        c_dict = {}
+        for row in aws_data:
+          # find mapping of column_idxs to column_names
+          if i == 0:
+            idx = 0
+            for cell in row:
+              c_dict[cell]=idx
+              idx += 1
+          else:
+            calc_price = point2comma(str(float(comma2point(row[c_dict['item-price']])) / float(comma2point(row[c_dict['quantity-shipped']]))))
+            out_row = ['Amazon',now,row[c_dict['amazon-order-id']],row[c_dict['amazon-order-id']],row[c_dict['purchase-date']],row[c_dict['buyer-email']],'','','','','','','','',row[c_dict['payments-date']],row[c_dict['product-name']],row[c_dict['sku']],row[c_dict['product-name']],calc_price,row[c_dict['quantity-shipped']],row[c_dict['item-price']],'',row[c_dict['item-tax']],row[c_dict['ship-country']]]
+            writer.writerow(out_row)
+          i += 1
+    else:
+      if found == 0:
+        print "[ABORT] No matching Amazon file found for file '"+shop_input_file+"'"
+      else:
+        print "[ABORT] "+str(found)+" matching Amazon files found for file '"+shop_input_file+"'"
+
+if __name__ == "__main__":
+    main()
+
