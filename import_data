@@ -31,9 +31,21 @@ def is_num(str):
     return False
   return True
 
+# Functions checks if element is a German (deu) number or float
+def is_num_deu(str):
+  try:
+    float(comma2point(str))
+  except:
+    return False
+  return True
+
 # Function converts point to comma (float conversion us -> deu)
 def point2comma(num):
   return str(num).replace('.',',')
+
+# Function converts comma to point (float conversion deu -> us)
+def comma2point(num):
+  return str(num).replace(',','.')
 
 # Function creates converted (deu) file
 def deu_convert(input_file, in_delimiter):
@@ -66,12 +78,13 @@ def awsemail_output_file_name(input_file):
   return input_file.replace('AWSID.', 'AWSEMAIL.AWSID.')
 
 # Function cell format checks for numeric columns
-def cell_format_num_error(input_file, in_delimiter, column_names):
+def cell_format_num_error(input_file, in_delimiter, column_names, column_names_deu):
   data = load_data(input_file, in_delimiter)
   print "[CHECK] Checking format of numeric columns in input file '"+input_file+"'"
   i = 0
   format_error = False
   column_idxs = []
+  column_idxs_deu = []
   for row in data:
     # find mapping of column_idxs to column_names
     if i == 0:
@@ -80,12 +93,21 @@ def cell_format_num_error(input_file, in_delimiter, column_names):
         for name in column_names:
           if name == cell:
             column_idxs.append(idx)
+        for name in column_names_deu:
+          if name == cell:
+            column_idxs_deu.append(idx)
         idx += 1
     else:
       j = 0
       for idx in column_idxs:
         if not is_num(row[idx]) and row[idx] !=  '':
           print "[ERROR$] Cell ("+str(i+1)+",'"+str(column_names[j])+"') is not numeric: '"+row[idx]+"'"
+          format_error = True
+        j += 1
+      j = 0
+      for idx in column_idxs_deu:
+        if not is_num_deu(row[idx]) and row[idx] !=  '':
+          print "[ERROR$] Cell ("+str(i+1)+",'"+str(column_names[j])+"') is not a German numeric: '"+row[idx]+"'"
           format_error = True
         j += 1
     i += 1
@@ -199,8 +221,9 @@ def main():
     if os.path.exists(deu_output_file_name(input_file)):
       print "[SKIP] Skipping convertion for output file '"+deu_output_file_name(input_file)+"' (already exists)"
     else:
-      shop_column_names = ['invoice_amount','invoice_amount_net','invoice_shipping','invoice_shipping_net','netto','price','quantity','tax']
-      if cell_format_num_error(input_file, ';', shop_column_names):
+      shop_column_names_deu = ['invoice_amount','invoice_amount_net','price','quantity']
+      shop_column_names = ['invoice_shipping','invoice_shipping_net','shopId','netto','tax','invoice']
+      if cell_format_num_error(input_file, ';', shop_column_names, shop_column_names_deu):
         print "[ABORT] Not converting file '"+input_file+"' due to format errors"
       else:
         print "[CONV] Converting numbers to output file '"+deu_output_file_name(input_file)+"' (point to comma)"
