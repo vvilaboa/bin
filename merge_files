@@ -66,7 +66,7 @@ def main():
               c_dict[cell]=idx
               idx += 1
           else:
-            out_row = ['Shop',now,row[c_dict['orderId']],row[c_dict['ordernumber']],row[c_dict['ordertime']],row[c_dict['customernumber']],row[c_dict['invoice_amount']],row[c_dict['invoice_amount_net']],row[c_dict['invoice_shipping']],row[c_dict['invoice_shipping_net']],row[c_dict['netto']],row[c_dict['cleared_description']],row[c_dict['status_description']],row[c_dict['payment_description']],row[c_dict['cleareddate']],row[c_dict['articleID']],row[c_dict['articleordernumber']],row[c_dict['name']],row[c_dict['price']],row[c_dict['quantity']],row[c_dict['invoice']],row[c_dict['releasedate']],row[c_dict['tax']],row[c_dict['shipping_countryiso']]]
+            out_row = ['Shop',now,row[c_dict['orderId']],row[c_dict['number']],row[c_dict['orderTime']],row[c_dict['customerId']],row[c_dict['invoiceAmount']],row[c_dict['invoiceAmountNet']],row[c_dict['invoiceShipping']],row[c_dict['invoiceShippingNet']],'',row[c_dict['paymentStatusDescription']],row[c_dict['orderStatusID']],row[c_dict['paymentDescription']],row[c_dict['clearedDate']],row[c_dict['articleId']],row[c_dict['articleNumber']],row[c_dict['articleName']],row[c_dict['price']],row[c_dict['quantity']],row[c_dict['invoice']],row[c_dict['releaseDate']],row[c_dict['taxRate']],row[c_dict['shippingCountryIso']]]
             writer.writerow(out_row)
           i += 1
 

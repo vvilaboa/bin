@@ -145,7 +145,7 @@ def cell_format_num_error_aws(input_file, in_delimiter, column_names):
 def date_convert(input_file, in_delimiter, type):
   data = load_data(input_file, in_delimiter)
   if type == 'shop':
-    column_names = ['ordertime','cleareddate','releasedate']
+    column_names = ['orderTime','clearedDate','releaseDate']
   if type == 'aws':
     column_names = ['purchase-date','payments-date','shipment-date','reporting-date','estimated-arrival-date']
   try:
@@ -247,8 +247,8 @@ def main():
     if os.path.exists(deu_output_file_name(input_file)):
       print "[SKIP] Skipping convertion for output file '"+deu_output_file_name(input_file)+"' (already exists)"
     else:
-      shop_column_names_deu = ['invoice_amount','invoice_amount_net','price','quantity']
-      shop_column_names = ['invoice_shipping','invoice_shipping_net','shopId','netto','tax','invoice']
+      shop_column_names_deu = ['invoiceAmount','invoiceAmountNet','price','quantity']
+      shop_column_names = ['invoiceShipping','invoiceShippingNet','shopId','taxRate','invoice']
       if cell_format_num_error_shop(input_file, ';', shop_column_names, shop_column_names_deu):
         print "[ABORT] Not converting file '"+input_file+"' due to format errors"
       else:
